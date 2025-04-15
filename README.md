@@ -1,1 +1,1 @@
-# gral-ie
+# Gradu Amaierako Lana: Ingenieritza Elektronikoa
