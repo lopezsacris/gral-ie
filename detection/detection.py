@@ -7,15 +7,11 @@ Created on Tue May 13 15:01:00 2025
 
 import numpy as np
 from influxdb_client import InfluxDBClient
+from shared_config import get_redis_client, REDIS_QUEUE
 import pandas as pd
 import time
 import os
-
-
-influx_url = os.getenv("INFLUX_URL")
-influx_token = os.getenv("INFLUX_TOKEN")
-organization = os.getenv("ORGANIZATION")
-bucket = os.getenv("BUCKET")
+import json
 
 
 def get_data():
@@ -73,15 +69,23 @@ def detect_anomaly(df, th1=0.5, th2=0.5):
 def save_anomaly(anomalies):
     # Anomaliarik badago, artxibo batean gorde, beste programak klasifikatzeko.
     if not anomalies.empty:
-        anomalies.to_csv("anomalies.csv", index=False)
+        data = anomalies[["Solenoid1", "Solenoid2"]].values.tolist()
+        r.lpush(REDIS_QUEUE, json.dumps(data))
+        print("[INFO] Anomalia klasifikatzaileari bidalita.")
 
 
-while True:
-    df = get_data()
-    if df.empty:
-        print("[INFO] Ez dago daturik. Itxaroten...")
+if __name__ == "__main__":
+    influx_url = os.getenv("INFLUX_URL")
+    influx_token = os.getenv("INFLUX_TOKEN")
+    organization = os.getenv("ORGANIZATION")
+    bucket = os.getenv("BUCKET")
+    r = get_redis_client()
+    while True:
+        df = get_data()
+        if df.empty:
+            print("[INFO] Ez dago daturik. Itxaroten...")
+            time.sleep(5)
+            continue
+        anomalies = detect_anomaly(df)
+        save_anomaly(anomalies)
         time.sleep(5)
-        continue
-    anomalies = detect_anomaly(df)
-    save_anomaly(anomalies)
-    time.sleep(5)

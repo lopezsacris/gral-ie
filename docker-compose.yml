@@ -15,7 +15,7 @@ services:
       - DOCKER_INFLUXDB_INIT_PASSWORD=mordor11
       - DOCKER_INFLUXDB_INIT_ORG=gaudee
       - DOCKER_INFLUXDB_INIT_BUCKET=linac7
-      - DOCKER_INFLUXDB_ADMIN_TOKEN=rsQPZbZyKpBW7Netgs7MvkIwnJ6_fevCw5Nmfof7_Vnc-uGZajYvQeQUT-jtmEf5BMbKO_FbLkUQVAEV9Lpyyg==
+      - DOCKER_INFLUXDB_ADMIN_TOKEN=KTEXV77e87puaAswQzhJQk-gzkCR3CmUkwP7j3sSImlKlyATJyx-CmF91ECPKght2AvgXzqYkxVzfWPJgdt4cA==
     networks:
       - transitions
 
@@ -45,26 +45,38 @@ services:
       - transitions
     
   detection:
-    build: ./detection
+    build: 
+       context: .
+       dockerfile: detection/Dockerfile
+    container_name: detection
     depends_on:
       - influxdb
+      - redis
     environment:
       - INFLUX_URL=http://influxdb_local:8086
-      - INFLUX_TOKEN=rsQPZbZyKpBW7Netgs7MvkIwnJ6_fevCw5Nmfof7_Vnc-uGZajYvQeQUT-jtmEf5BMbKO_FbLkUQVAEV9Lpyyg==
+      - INFLUX_TOKEN=KTEXV77e87puaAswQzhJQk-gzkCR3CmUkwP7j3sSImlKlyATJyx-CmF91ECPKght2AvgXzqYkxVzfWPJgdt4cA==
       - ORGANIZATION=gaudee
       - BUCKET=linac7
+      - REDIS_HOST=redis
     networks:
       - transitions
   
   classification:
-    build: ./classification
+    build: 
+       context: .
+       dockerfile: classification/Dockerfile
+    container_name: classification
     depends_on:
-      - influxdb
+      - redis
     environment:
-      - INFLUX_URL=http://influxdb_local:8086
-      - INFLUX_TOKEN=rsQPZbZyKpBW7Netgs7MvkIwnJ6_fevCw5Nmfof7_Vnc-uGZajYvQeQUT-jtmEf5BMbKO_FbLkUQVAEV9Lpyyg==
-      - ORGANIZATION=gaudee
-      - BUCKET=linac7
+      - REDIS_HOST=redis
+    networks:
+      - transitions
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
     networks:
       - transitions
 
