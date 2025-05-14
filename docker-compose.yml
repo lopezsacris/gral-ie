@@ -15,7 +15,7 @@ services:
       - DOCKER_INFLUXDB_INIT_PASSWORD=mordor11
       - DOCKER_INFLUXDB_INIT_ORG=gaudee
       - DOCKER_INFLUXDB_INIT_BUCKET=linac7
-      - DOCKER_INFLUXDB_ADMIN_TOKEN=mordor11
+      - DOCKER_INFLUXDB_ADMIN_TOKEN=rsQPZbZyKpBW7Netgs7MvkIwnJ6_fevCw5Nmfof7_Vnc-uGZajYvQeQUT-jtmEf5BMbKO_FbLkUQVAEV9Lpyyg==
     networks:
       - transitions
 
@@ -44,6 +44,29 @@ services:
     networks:
       - transitions
     
+  detection:
+    build: ./detection
+    depends_on:
+      - influxdb
+    environment:
+      - INFLUX_URL=http://influxdb_local:8086
+      - INFLUX_TOKEN=rsQPZbZyKpBW7Netgs7MvkIwnJ6_fevCw5Nmfof7_Vnc-uGZajYvQeQUT-jtmEf5BMbKO_FbLkUQVAEV9Lpyyg==
+      - ORGANIZATION=gaudee
+      - BUCKET=linac7
+    networks:
+      - transitions
+  
+  classification:
+    build: ./classification
+    depends_on:
+      - influxdb
+    environment:
+      - INFLUX_URL=http://influxdb_local:8086
+      - INFLUX_TOKEN=rsQPZbZyKpBW7Netgs7MvkIwnJ6_fevCw5Nmfof7_Vnc-uGZajYvQeQUT-jtmEf5BMbKO_FbLkUQVAEV9Lpyyg==
+      - ORGANIZATION=gaudee
+      - BUCKET=linac7
+    networks:
+      - transitions
 
 volumes:
   influxdb_data:
