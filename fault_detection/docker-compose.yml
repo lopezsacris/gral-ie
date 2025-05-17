@@ -15,7 +15,7 @@ services:
       - DOCKER_INFLUXDB_INIT_PASSWORD=mordor11
       - DOCKER_INFLUXDB_INIT_ORG=gaudee
       - DOCKER_INFLUXDB_INIT_BUCKET=linac7
-      - DOCKER_INFLUXDB_ADMIN_TOKEN=KTEXV77e87puaAswQzhJQk-gzkCR3CmUkwP7j3sSImlKlyATJyx-CmF91ECPKght2AvgXzqYkxVzfWPJgdt4cA==
+      - DOCKER_INFLUXDB_ADMIN_TOKEN=mordor111
     networks:
       - transitions
 
@@ -54,7 +54,7 @@ services:
       - redis
     environment:
       - INFLUX_URL=http://influxdb_local:8086
-      - INFLUX_TOKEN=KTEXV77e87puaAswQzhJQk-gzkCR3CmUkwP7j3sSImlKlyATJyx-CmF91ECPKght2AvgXzqYkxVzfWPJgdt4cA==
+      - INFLUX_TOKEN=ftnNk75yqpo62jBsEWryKFNIq54Zu6_gB5LgYL7VD8ExGYhKIeE7LeEt_T2MMLS-WrkXfRx_zG3i3v1t7L62qw==
       - ORGANIZATION=gaudee
       - BUCKET=linac7
       - REDIS_HOST=redis
