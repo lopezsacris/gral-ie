@@ -1,6 +1,5 @@
 numpy<2.0
 tensorflow==2.10
-redis
 influxdb-client
 pandas
 requests

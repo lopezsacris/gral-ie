@@ -51,13 +51,11 @@ services:
     container_name: detection
     depends_on:
       - influxdb
-      - redis
     environment:
       - INFLUX_URL=http://influxdb_local:8086
       - INFLUX_TOKEN=ftnNk75yqpo62jBsEWryKFNIq54Zu6_gB5LgYL7VD8ExGYhKIeE7LeEt_T2MMLS-WrkXfRx_zG3i3v1t7L62qw==
       - ORGANIZATION=gaudee
       - BUCKET=linac7
-      - REDIS_HOST=redis
     networks:
       - transitions
   
@@ -67,16 +65,12 @@ services:
        dockerfile: classification/Dockerfile
     container_name: classification
     depends_on:
-      - redis
+      - influxdb
     environment:
-      - REDIS_HOST=redis
-    networks:
-      - transitions
-  redis:
-    image: redis:7
-    container_name: redis
-    ports:
-      - "6379:6379"
+      - INFLUX_URL=http://influxdb_local:8086
+      - INFLUX_TOKEN=ftnNk75yqpo62jBsEWryKFNIq54Zu6_gB5LgYL7VD8ExGYhKIeE7LeEt_T2MMLS-WrkXfRx_zG3i3v1t7L62qw==
+      - ORGANIZATION=gaudee
+      - BUCKET=linac7
     networks:
       - transitions
 

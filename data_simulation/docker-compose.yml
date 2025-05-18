@@ -14,8 +14,8 @@ services:
 
   simulator:
     build:
-      context: .
-      dockerfile: simulator/Dockerfile
+      context: simulator
+      dockerfile: Dockerfile
     volumes:
       - ./data:/app/data
     depends_on:
@@ -26,6 +26,7 @@ services:
     container_name: simulator
     networks:
       - simulations
+    command: ["sh", "-c", "sleep 20 && python simulator.py"]
 
   telegraf:
     image: telegraf:1.30
@@ -52,7 +53,7 @@ services:
       - DOCKER_INFLUXDB_INIT_PASSWORD=mordor11
       - DOCKER_INFLUXDB_INIT_ORG=gaudee
       - DOCKER_INFLUXDB_INIT_BUCKET=linac7
-      - DOCKER_INFLUXDB_ADMIN_TOKEN=PFf6gAxu1Cqju-6G7rZAG0oy8f6dyVlBwzpPPT-4SNp-nWg7Ofkc4NmKPdMgNG768JdRUZ4hOjyfpYJ9YPFVKQ==
+      - DOCKER_INFLUXDB_ADMIN_TOKEN=_KXVLOwqKq6IQP93q-oKJvEFO6TziSs1LDjY3-czXZouep9g-orWjEstwzHXjHqMWRgMGS_6yTcBnmJmOvfvdg==
     networks:
       - simulations
 volumes:
