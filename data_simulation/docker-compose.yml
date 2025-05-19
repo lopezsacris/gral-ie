@@ -28,6 +28,22 @@ services:
       - simulations
     command: ["sh", "-c", "sleep 20 && python simulator.py"]
 
+  detection:
+    build:
+      context: detection
+      dockerfile: Dockerfile
+    depends_on:
+      - influxdb
+    environment:
+      - INFLUX_URL=http://influxdb_sim:8086
+      - INFLUX_TOKEN=Uns235Eu7DAOhl3QJzlx2PC3RpUJLRcCbIfFbt2cuoyBfnSib55C86mwFmr_U6dKkSYpJgszZTR8KAOv1_4kfw==
+      - ORGANIZATION=gaudee
+      - BUCKET=linac7
+    container_name: detection_sim
+    networks:
+      - simulations
+    command: ["sh", "-c", "sleep 20 && python detection.py"]
+
   telegraf:
     image: telegraf:1.30
     container_name: telegraf_sim
@@ -53,7 +69,7 @@ services:
       - DOCKER_INFLUXDB_INIT_PASSWORD=mordor11
       - DOCKER_INFLUXDB_INIT_ORG=gaudee
       - DOCKER_INFLUXDB_INIT_BUCKET=linac7
-      - DOCKER_INFLUXDB_ADMIN_TOKEN=_KXVLOwqKq6IQP93q-oKJvEFO6TziSs1LDjY3-czXZouep9g-orWjEstwzHXjHqMWRgMGS_6yTcBnmJmOvfvdg==
+      - DOCKER_INFLUXDB_ADMIN_TOKEN=Uns235Eu7DAOhl3QJzlx2PC3RpUJLRcCbIfFbt2cuoyBfnSib55C86mwFmr_U6dKkSYpJgszZTR8KAOv1_4kfw==
     networks:
       - simulations
 volumes:

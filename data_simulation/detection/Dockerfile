@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.9-slim
 
 # Kontenedorean lan-helbidea definitu
 WORKDIR /app
@@ -7,10 +7,10 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 
 # Instalatu moduluak
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Kopiatu programa kontenedorean
-COPY simulator.py simulator.py
+COPY detection.py detection.py
 
 # Exekutatu
-CMD ["python", "simulator.py"]
+CMD ["python", "detection.py"]

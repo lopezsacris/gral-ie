@@ -1,4 +1,4 @@
 pandas
-paho-mqtt
+influxdb_client
 numpy
 scipy
