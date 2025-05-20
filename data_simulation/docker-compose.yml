@@ -36,13 +36,13 @@ services:
       - influxdb
     environment:
       - INFLUX_URL=http://influxdb_sim:8086
-      - INFLUX_TOKEN=Uns235Eu7DAOhl3QJzlx2PC3RpUJLRcCbIfFbt2cuoyBfnSib55C86mwFmr_U6dKkSYpJgszZTR8KAOv1_4kfw==
+      - INFLUX_TOKEN=87ghmfUTGX-V-YoJYbtWXluiAm4NPeekcmhnZnQg9v988tDsWnm6w25IvkEGORr2xcrDxFFPaHg57rYYwriVfQ==
       - ORGANIZATION=gaudee
       - BUCKET=linac7
     container_name: detection_sim
     networks:
       - simulations
-    command: ["sh", "-c", "sleep 20 && python detection.py"]
+    command: ["python", "-u", "detection.py"]
 
   telegraf:
     image: telegraf:1.30

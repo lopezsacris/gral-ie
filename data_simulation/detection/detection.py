@@ -13,13 +13,13 @@ import os
 from scipy.signal import find_peaks
 from scipy.stats import linregress
 from influxdb_client import Point
+# Query-ak ematen duen abisua ez agertzeko (pivot komando falta)
 import warnings
 from influxdb_client.client.warnings import MissingPivotFunction
-
 warnings.simplefilter("ignore", MissingPivotFunction)
 
 
-def get_data(client):
+def get_data(bucket, client):
     # Datuak lortzeko objetua hasiarazi.
     query_api = client.query_api()
     fields = ["ForwardPower", "ReflectionCoefficientMagnitude",
@@ -41,14 +41,18 @@ def get_data(client):
                 df = pd.concat(result, ignore_index=True)
             else:
                 df = result
+
             if (not df.empty and "_time" in df.columns
                     and "_value" in df.columns):
                 df = df[["_time", "_value"]].rename(columns={"_value": field})
+
                 df["_time"] = pd.to_datetime(df["_time"])
                 df = df.dropna(subset=["_time"])
+
                 df[field] = pd.to_numeric(df[field], errors='coerce')
                 df = df.dropna(subset=[field])
                 df = df.sort_values("_time").reset_index(drop=True)
+
                 dataframes[field] = df
             else:
                 print(f"[INFO] Ez dira datuak aurkitu {field} eremurako.")
@@ -59,6 +63,8 @@ def get_data(client):
 
     merged_df = None
     for field, df in dataframes.items():
+        if df.empty:
+            continue
         if merged_df is None:
             merged_df = df
         else:
@@ -66,15 +72,11 @@ def get_data(client):
                 merged_df.sort_values("_time"),
                 df.sort_values("_time"),
                 on="_time",
-                direction="nearest",
-                tolerance=pd.Timedelta("1s")
+                direction="nearest"
             )
 
-    if merged_df is not None and not merged_df.empty:
-        return merged_df
-
-    else:
-        return pd.DataFrame(columns=["_time"] + fields)
+    return (merged_df if merged_df is not None
+            and not merged_df.empty else pd.DataFrame())
 
 
 def calculate_adaptation(df):
@@ -96,7 +98,8 @@ def calculate_noisefwd(df):
             and "ReflectionCoefficientMagnitude" in df.columns
             and "IncidentPowerReference" in df.columns):
         # Kalkulatu zarata neurtutako eta erreferentziazko potentziak erabiliz
-        df["NoiseForward"] = (df["IncidentPowerReference"]-df["ForwardPower"])
+        df["NoiseForward"] = (df["ForwardPower"] -
+                              df["IncidentPowerReference"])
     else:
         df["NoiseForward"] = np.nan
     return df
@@ -107,21 +110,21 @@ def ewma_filter(df, column, alpha=0.01, prev_filtered_last_value=None):
         print(f"[ERROR] '{column}' ez dago datuetan.")
         return df[column]
 
-    # Aurreko baliorik balego, erabili iragazketa zentzuzkoa izateko
+    # Iragazketa aurreko datu-leihoarekin zentzuzkoa: aurreko balioa erabili
     if prev_filtered_last_value is not None:
         temp_series = pd.concat([
             pd.Series([prev_filtered_last_value]),
             df[column]
         ], ignore_index=True)
         filtered = temp_series.ewm(alpha=alpha, adjust=False).mean()
-        # Kendu lehen balio artifiziala
+        # Kendu lehen balioa, ez errepikatzeko
         return filtered.iloc[1:].reset_index(drop=True)
     else:
         return df[column].ewm(alpha=alpha,
                               adjust=False).mean().reset_index(drop=True)
 
 
-def detect_anomaly(df, threshold=0.007, prominence_noise=0.7):
+def detect_anomaly(df, threshold=0.008, prominence_noise=0.6):
     if ("Adaptation_filtered" in df.columns
             and "NoiseForward_filtered" in df.columns):
         # Datuak denboraren arabera ordenatu, arazorik balego.
@@ -137,27 +140,29 @@ def detect_anomaly(df, threshold=0.007, prominence_noise=0.7):
         slope, _, _, _, _ = linregress(x, y)
         df["is_adaptation_jump"] = abs(slope) > threshold
         # Bueltatu deribatua ataria baino handiago duten lerroak.
-        anomalies = df[df["is_noise_peak"] | df["is_adaptation_jump"]]  # ****
+        anomalies = df[df["is_noise_peak"] & df["is_adaptation_jump"]]
         if not anomalies.empty:
-            return anomalies[["_time", "Adaptation_filtered",
-                              "NoiseForward_filtered"]]
+            return True
         else:
-            return pd.DataFrame()
+            return False
     else:
         print('[ERROR] Beharrezko zutabeak ez dira aurkitu.')
-        return pd.DataFrame()
+        return False
 
 
-def save_anomaly(anomalies, write_api):
-    for _, row in anomalies.iterrows():
-        point = (
-            Point("anomalies")
-            .time(row["_time"])
-            .field("adaptation_filtered", row["Adaptation_filtered"])
-            .field("noiseforward_filtered", row["NoiseForward_filtered"])
-            .field("anomaly", True)
-            )
-        write_api.write(bucket=bucket, record=point)
+def save_anomaly(df, bucket, write_api):
+    for _, row in df.iterrows():
+        try:
+            point = (
+                Point("anomalies")
+                .time(row["_time"])
+                .field("Adaptation_Filtered", row["Adaptation_filtered"])
+                .field("Noiseforward_Filtered", row["NoiseForward_filtered"])
+                .field("anomaly", True)
+                )
+            write_api.write(bucket=bucket, record=point)
+        except Exception as e:
+            print(f'[ERROR] Ezin izan da puntua InfluxDB-n idatzi: {e}')
 
 
 if __name__ == "__main__":
@@ -172,26 +177,25 @@ if __name__ == "__main__":
         prev_noise = None
         while True:
             start_time = time.time()
-            df = get_data(client)
+            df = get_data(bucket, client)
             if not df.empty:
                 df = calculate_adaptation(df)
                 df = calculate_noisefwd(df)
                 if "Adaptation" in df.columns and "NoiseForward" in df.columns:
-                    df["Adaptation_filtered"] = ewma_filter(df, "Adaptation",
-                                                            0.001,
-                                                            prev_adaptation)
-                    df["NoiseForward_filtered"] = ewma_filter(df,
-                                                              "NoiseForward",
-                                                              0.02, prev_noise)
-                anomalies = detect_anomaly(df)
-                print(anomalies.empty)
-                if not df["Adaptation_filtered"].empty:
-                    prev_adaptation = df["Adaptation_filtered"].iloc[-1]
-                if not df["NoiseForward_filtered"].empty:
-                    prev_noise = df["NoiseForward_filtered"].iloc[-1]
-                if not anomalies.empty:
-                    save_anomaly(anomalies, write_api)
-
+                    df["Adaptation_filtered"] = ewma_filter(
+                        df, "Adaptation", 0.01, prev_adaptation)
+                    df["NoiseForward_filtered"] = ewma_filter(
+                        df, "NoiseForward", 0.01, prev_noise)
+                    # Gorde azkenengo balioak, hurrengo datu-leihorako.
+                    if not df["Adaptation_filtered"].empty:
+                        prev_adaptation = df["Adaptation_filtered"].iloc[-1]
+                    if not df["NoiseForward_filtered"].empty:
+                        prev_noise = df["NoiseForward_filtered"].iloc[-1]
+                if detect_anomaly(df):
+                    print("[INFO] Anomalia detektatuta! Leihoa gordetzen...")
+                    save_anomaly(df, bucket, write_api)
+                else:
+                    print("[INFO] Ez dago anomaliarik...")
             else:
                 print("[INFO] Ez dago daturik. Itxaroten...")
                 time.sleep(5)
