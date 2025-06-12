@@ -1,9 +1,0 @@
-InfluxDB:
-192.168.213.113:8086
-gaudee
-mordor11
-
-EMQX:
-192.168.213.117:18083
-admin
-mordor1
