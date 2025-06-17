@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  transitions:
+    build:
+      context: transitions
+      dockerfile: Dockerfile
+    environment:
+      - INFLUX_URL=${INFLUX_URL}
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - ORGANIZATION=${ORGANIZATION}
+      - BUCKET=${BUCKET}
+    container_name: transitions
+    networks:
+      - detections
+    command: ["python", "-u", "transitions.py"]
+
+  faults:
+    build:
+      context: faults
+      dockerfile: Dockerfile
+    environment:
+      - INFLUX_URL=${INFLUX_URL}
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - ORGANIZATION=${ORGANIZATION}
+      - BUCKET=${BUCKET}
+    container_name: faults
+    networks:
+      - detections
+    command: ["python", "-u", "faults.py"] 
+
+networks:
+  detections:
+    driver: bridge
