@@ -2,31 +2,13 @@ version: '3.8'
 
 services:
   mqtt_broker:
-    image: emqx/emqx:latest
+    image: emqx/emqx:5.4.1
     ports:
       - "1883:1883"
-      - "8083:8083"
-      - "8883:8883"
       - "18083:18083"
     container_name: emqx
     networks:
       - simulations
-
-  simulator:
-    build:
-      context: simulator
-      dockerfile: Dockerfile
-    volumes:
-      - ./data:/app/data
-    depends_on:
-      - mqtt_broker
-    environment:
-      MQTT_BROKER_HOST: mqtt_broker
-      MQTT_TOPIC: data
-    container_name: simulator
-    networks:
-      - simulations
-    command: ["sh", "-c", "sleep 20 && python simulator.py"]
 
   telegraf:
     image: telegraf:1.30
@@ -56,6 +38,23 @@ services:
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=87ghmfUTGX-V-YoJYbtWXluiAm4NPeekcmhnZnQg9v988tDsWnm6w25IvkEGORr2xcrDxFFPaHg57rYYwriVfQ==
     networks:
       - simulations
+      
+  simulator:
+    build:
+      context: simulator
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - mqtt_broker
+    environment:
+      MQTT_BROKER_HOST: mqtt_broker
+      MQTT_TOPIC: data
+    container_name: simulator
+    networks:
+      - simulations
+    command: ["sh", "-c", "sleep 20 && python simulator.py"]
+
 volumes:
   influxdb_simulation:
 

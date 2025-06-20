@@ -193,6 +193,14 @@ if __name__ == "__main__":
                 )
 
                 # Imprimir anomalías si las hay
+                plt.rcParams.update({
+                    'font.size': 16,          
+                    'axes.titlesize': 18,    
+                    'axes.labelsize': 16,     
+                    'xtick.labelsize': 14,    
+                    'ytick.labelsize': 14,    
+                    'legend.fontsize': 14     
+                })
                 df_rf_full = df_rf.dropna(subset=rf_taldea_cols).copy()
                 df_rf_full["anomaly"] = False  # Inicializar
                 if not anomalies_rf.empty:

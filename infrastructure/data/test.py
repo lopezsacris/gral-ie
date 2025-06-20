@@ -198,6 +198,15 @@ if __name__ == "__main__":
                 df_lum = dataframes['CameraLuminosity'][['time',
                                                          'CameraLuminosity']
                                                         ].sort_values('time')
+                if not anomalies_df.empty:
+                    luminosity_anomalies = pd.merge_asof(anomalies_df[['time']],
+                                         df_lum[['time', 'CameraLuminosity']],
+                                         on='time', direction='nearest')
+
+                    axs[1].scatter(luminosity_anomalies['time'],
+                                   luminosity_anomalies['CameraLuminosity'],
+                                   color='orange', marker='o',
+                                   label='Trantsizioa (Luminositatea)')
                 axs[1].plot(df_lum["time"], df_lum["CameraLuminosity"],
                             label="Luminositatea", color='blue')
                 axs[1].set_xlabel("Denbora")
